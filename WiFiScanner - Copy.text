@@ -1,0 +1,87 @@
+#include <ESP8266WiFi.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+void setup() {
+  Serial.begin(115200);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+
+  display.setTextColor(SSD1306_WHITE);
+
+  // Clear the buffer
+  display.clearDisplay();
+
+  display.setCursor(0,0); // Start at top-left corner
+  display.println("Wifi Strength Meter");
+
+  // drawing commands to make them visible on screen!
+  display.display();
+  delay(2000);
+  
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();  //ESP has tendency to store old SSID and PASSword and tries to connect
+  delay(100);
+
+  Serial.println("WiFi Network Scan Started");
+}
+
+
+void loop() {
+ 
+  // WiFi.scanNetworks will return the number of networks found
+  int n = WiFi.scanNetworks();
+   
+  Serial.println("Scan done");
+
+  display.clearDisplay();
+  display.setCursor(0,0);
+  
+  if (n == 0)
+  {
+    display.println("No Networks Found");
+    display.display();
+    Serial.println("No Networks Found");
+  }
+  else
+  {
+    Serial.println(" Networks found");
+    display.println("    All Networks\n");
+    for (int i = 0; i < n; ++i)
+    {
+      // Print SSID and RSSI for each network found
+      Serial.print(WiFi.SSID(i)); //SSID
+      Serial.print(" ");
+      Serial.println(WiFi.RSSI(i)); //Signal Strength
+
+      String ssid = WiFi.SSID(i);
+      if(ssid.length()> 10)
+        ssid = ssid.substring(0,10);
+        
+      display.print(ssid);
+
+      display.setCursor(96, display.getCursorY());
+      display.println(WiFi.RSSI(i)); //Signal Strength
+            
+      delay(10);
+    }
+
+    display.display();
+  }
+
+  // Wait a bit before starting New scanning again
+  delay(5000);
+} develop by damith lasdanthha
